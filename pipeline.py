@@ -16,11 +16,22 @@ from adjustments import (
 RAW_EXTS = (".nef",".cr2",".crw",".raf",".dng",
             ".dcr",".mrw",".orf",".pef",".srf")
 
+# mapping from user-friendly names to rawpy colour spaces
+_COLOR_MAP = {
+    "sRGB": rawpy.ColorSpace.sRGB,
+    "Adobe": rawpy.ColorSpace.Adobe,
+    "ProPhoto": rawpy.ColorSpace.ProPhoto,
+}
+
+def _map_color_space(name):
+    """Return rawpy colour space constant for given name."""
+    return _COLOR_MAP.get(name, rawpy.ColorSpace.sRGB)
+
 # ----------------------------------------------------------------------
 # RAW → float32 BGR [0–1]   (preview + processing start-point)
 # ----------------------------------------------------------------------
 
-def raw2bgr(raw, *, kelvin, tint):
+def raw2bgr(raw, *, kelvin, tint, color_space="sRGB"):
     """
     * If sliders are at the neutral point (5050 K, +8) we simply let
       LibRaw apply the camera’s As-Shot multipliers – identical to ACR.
@@ -30,7 +41,7 @@ def raw2bgr(raw, *, kelvin, tint):
     if kelvin == NEUTRAL_TEMP and tint == NEUTRAL_TINT:
         rgb8 = raw.postprocess(
             no_auto_bright=True,
-            output_color = rawpy.ColorSpace.sRGB,
+            output_color = _map_color_space(color_space),
             gamma        = (2.222, 4.5),
             output_bps   = 8,
             use_camera_wb=True,
@@ -42,7 +53,7 @@ def raw2bgr(raw, *, kelvin, tint):
 
         rgb8 = raw.postprocess(
             no_auto_bright=True,
-            output_color = rawpy.ColorSpace.sRGB,
+            output_color = _map_color_space(color_space),
             gamma        = (2.222, 4.5),
             output_bps   = 8,
             use_camera_wb=False,
@@ -67,7 +78,8 @@ def process_images(file_list, params, options):
                 img = raw2bgr(
                     raw,
                     kelvin=params["temperature"],
-                    tint  =params["tint"],
+                    tint=params["tint"],
+                    color_space=options["color_space"],
                 )
         except Exception as e:
             print(f"[skip] {os.path.basename(path)}: {e}")
