@@ -175,7 +175,8 @@ def update_preview():
             img_base = raw2bgr(
                 raw,
                 kelvin=temp_scale.get(),
-                tint=tint_scale.get()
+                tint=tint_scale.get(),
+                color_space=options["color_space"],
             )
     except Exception as e:
         preview_label.config(text=f"Error: {e}")
@@ -219,11 +220,76 @@ def on_add_images():
 
 # save options window
 def on_save_options():
+    """Open a window for adjusting file saving preferences."""
     win = tk.Toplevel(root)
     win.title("Save Options")
-    # ... (implementation can remain as is) ...
-    # For brevity, this part is omitted, but it would build the save options dialog.
-    ttk.Label(win, text="This feature can be built out here.").pack(padx=20, pady=20)
+    win.grab_set()
+
+    # -- destination folder --
+    dest_var = tk.StringVar(value=options["dest_folder"])
+
+    def choose_dest():
+        d = filedialog.askdirectory(initialdir=dest_var.get())
+        if d:
+            dest_var.set(d)
+
+    ttk.Label(win, text="Destination Folder").grid(row=0, column=0, sticky="w")
+    dest_entry = ttk.Entry(win, textvariable=dest_var, width=40)
+    dest_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+    ttk.Button(win, text="Browse", command=choose_dest).grid(row=0, column=2, padx=5)
+
+    # -- file naming suffix --
+    ttk.Label(win, text="File Naming Suffix").grid(row=1, column=0, sticky="w")
+    name_var = tk.StringVar(value=options["file_naming"])
+    ttk.Entry(win, textvariable=name_var).grid(row=1, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
+
+    # -- output format --
+    ttk.Label(win, text="Format").grid(row=2, column=0, sticky="w")
+    fmt_var = tk.StringVar(value=options["format"])
+    ttk.Combobox(win, textvariable=fmt_var, state="readonly",
+                 values=["JPEG", "TIFF", "PNG"]).grid(row=2, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
+
+    # -- colour space --
+    ttk.Label(win, text="Color Space").grid(row=3, column=0, sticky="w")
+    color_var = tk.StringVar(value=options["color_space"])
+    ttk.Combobox(win, textvariable=color_var, state="readonly",
+                 values=["sRGB", "Adobe", "ProPhoto"]).grid(row=3, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
+
+    # -- image sizing --
+    ttk.Label(win, text="Resize (WxH)").grid(row=4, column=0, sticky="w")
+    w_var = tk.StringVar()
+    h_var = tk.StringVar()
+    if options["size"]:
+        w_var.set(str(options["size"][0]))
+        h_var.set(str(options["size"][1]))
+    ttk.Entry(win, textvariable=w_var, width=6).grid(row=4, column=1, sticky="w", padx=(5,2), pady=5)
+    ttk.Entry(win, textvariable=h_var, width=6).grid(row=4, column=1, sticky="e", padx=(2,5), pady=5)
+
+    # -- output sharpening --
+    ttk.Label(win, text="Output Sharpening").grid(row=5, column=0, sticky="w")
+    sharp_var = tk.StringVar(value=options["sharpening"])
+    ttk.Combobox(win, textvariable=sharp_var, state="readonly",
+                 values=["None", "Low", "Standard", "High"]).grid(row=5, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
+
+    # save the options back to the global dict
+    def save_and_close():
+        options["dest_folder"] = dest_var.get()
+        options["file_naming"] = name_var.get()
+        options["format"] = fmt_var.get()
+        options["color_space"] = color_var.get()
+        try:
+            w = int(w_var.get())
+            h = int(h_var.get())
+            options["size"] = (w, h) if w > 0 and h > 0 else None
+        except ValueError:
+            options["size"] = None
+        options["sharpening"] = sharp_var.get()
+        win.destroy()
+
+    ttk.Button(win, text="Save", command=save_and_close).grid(row=6, column=1, pady=10)
+    ttk.Button(win, text="Cancel", command=win.destroy).grid(row=6, column=2, pady=10)
+
+    win.columnconfigure(1, weight=1)
 
 
 # save preset

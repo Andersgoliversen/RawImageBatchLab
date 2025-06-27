@@ -20,5 +20,5 @@ This project is currently a work in progress. It features a Tkinter-based interf
    python ui.py
    ```
 
-3. Click **Add Images** to select RAW files, adjust the sliders while viewing the live preview, and choose **Process Images** to save the results.
+3. Click **Add Images** to select RAW files, adjust the sliders while viewing the live preview, and use **Save Options** to set the output destination, file naming and other preferences. When satisfied, choose **Process Images** to save the results.
 
