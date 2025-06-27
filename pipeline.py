@@ -9,12 +9,7 @@ import numpy as np
 
 from adjustments import (
     compute_wb_scalers,
-    adjust_exposure, adjust_contrast,
-    adjust_highlights, adjust_shadows,
-    adjust_whites, adjust_blacks,
-    adjust_texture, adjust_clarity,
-    dehaze_image,
-    adjust_vibrance, adjust_saturation,
+    apply_adjustments,
     NEUTRAL_TEMP, NEUTRAL_TINT,
 )
 
@@ -62,6 +57,7 @@ def raw2bgr(raw, *, kelvin, tint):
 # ----------------------------------------------------------------------
 
 def process_images(file_list, params, options):
+    """Process a list of RAW files using the given parameters and options."""
     for path in file_list:
         if not path.lower().endswith(RAW_EXTS):          # skip non-RAW
             continue
@@ -78,17 +74,7 @@ def process_images(file_list, params, options):
             continue
 
         # tone / colour adjustments
-        img = np.clip(adjust_exposure  (img, params["exposure"]),   0, 1)
-        img = np.clip(adjust_contrast  (img, params["contrast"]),   0, 1)
-        img = np.clip(adjust_highlights(img, params["highlights"]), 0, 1)
-        img = np.clip(adjust_shadows   (img, params["shadows"]),    0, 1)
-        img = np.clip(adjust_whites    (img, params["whites"]),     0, 1)
-        img = np.clip(adjust_blacks    (img, params["blacks"]),     0, 1)
-        img = np.clip(adjust_texture   (img, params["texture"]),    0, 1)
-        img = np.clip(adjust_clarity   (img, params["clarity"]),    0, 1)
-        img = np.clip(dehaze_image     (img, params["dehaze"]),     0, 1)
-        img = np.clip(adjust_vibrance  (img, params["vibrance"]),   0, 1)
-        img = np.clip(adjust_saturation(img, params["saturation"]), 0, 1)
+        img = apply_adjustments(img, params)
 
         # optional resize
         if options["size"]:

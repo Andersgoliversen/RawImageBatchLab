@@ -88,3 +88,28 @@ def adjust_vibrance(img, amount):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV).astype(np.float32)
     hsv[...,1] = np.clip(hsv[...,1] * (1 + f * (1 - hsv[...,1])), 0, 1)
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+# ----------------------------------------------------------------------
+# adjustment pipeline helper
+# ----------------------------------------------------------------------
+
+# ordered list mapping parameter names to adjustment functions
+ADJUST_SEQ = [
+    ("exposure",   adjust_exposure),
+    ("contrast",   adjust_contrast),
+    ("highlights", adjust_highlights),
+    ("shadows",    adjust_shadows),
+    ("whites",     adjust_whites),
+    ("blacks",     adjust_blacks),
+    ("texture",    adjust_texture),
+    ("clarity",    adjust_clarity),
+    ("dehaze",     dehaze_image),
+    ("vibrance",   adjust_vibrance),
+    ("saturation", adjust_saturation),
+]
+
+def apply_adjustments(img, params):
+    """Apply all colour and tone adjustments in order."""
+    for name, func in ADJUST_SEQ:
+        img = np.clip(func(img, params[name]), 0, 1)
+    return img

@@ -20,14 +20,7 @@ from PIL import Image, ImageTk
 
 import pipeline
 from pipeline import raw2bgr
-from adjustments import (
-    adjust_exposure, adjust_contrast,
-    adjust_highlights, adjust_shadows,
-    adjust_whites, adjust_blacks,
-    adjust_texture, adjust_clarity,
-    dehaze_image,
-    adjust_vibrance, adjust_saturation,
-)
+from adjustments import apply_adjustments
 
 # supported RAW extensions
 RAW_EXTS = (".nef", ".cr2", ".crw", ".raf", ".dng",
@@ -195,17 +188,7 @@ def update_preview():
                        if scale < 1.0 else img_base.copy())
 
     # apply adjustment chain
-    img = np.clip(adjust_exposure(img_for_preview, params['exposure']),   0,1)
-    img = np.clip(adjust_contrast(img,        params['contrast']),      0,1)
-    img = np.clip(adjust_highlights(img,      params['highlights']),    0,1)
-    img = np.clip(adjust_shadows(img,         params['shadows']),       0,1)
-    img = np.clip(adjust_whites(img,          params['whites']),        0,1)
-    img = np.clip(adjust_blacks(img,          params['blacks']),        0,1)
-    img = np.clip(adjust_texture(img,         params['texture']),       0,1)
-    img = np.clip(adjust_clarity(img,         params['clarity']),       0,1)
-    img = np.clip(dehaze_image(img,           params['dehaze']),        0,1)
-    img = np.clip(adjust_vibrance(img,        params['vibrance']),      0,1)
-    img = np.clip(adjust_saturation(img,      params['saturation']),    0,1)
+    img = apply_adjustments(img_for_preview, params)
 
     # convert to 8-bit and swap channels once for display
     disp = (img * 255).astype(np.uint8)[..., ::-1]  # BGR->RGB
