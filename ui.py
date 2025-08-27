@@ -1,9 +1,7 @@
 """
-ui.py – Modernised Tkinter front-end for RawImageBatchLab
-2025-07-01
-• Restore:   Save Options window (export settings, like Camera Raw).
-• Add:       Save Preset / Load Preset (adjustment parameter JSON).
-• Toolbar now: Add Images · Process · Save Options · Save Preset · Load Preset.
+ui.py – Tkinter front-end for RawImageBatchLab
+2025-08-27
+• No UI changes; compatible with 16-bit decode and new tone behavior.
 """
 import os, json, tkinter as tk
 from tkinter import ttk, filedialog
@@ -22,7 +20,7 @@ root = tk.Tk()
 root.title("Image Batch Lab")
 
 style = ttk.Style(root)
-try:                     # flat, neutral-grey theme
+try:
     style.theme_use("clam")
 except tk.TclError:
     pass
@@ -37,7 +35,7 @@ DEFAULT_TEMP, DEFAULT_TINT = 5050, 8
 selected_images, preview_idx = [], 0
 status_var = tk.StringVar(value="No images loaded")
 
-# Export-options dictionary (mirrors Camera Raw “Save Options” panel)
+# Export-options dictionary (Camera Raw-like “Save Options” panel)
 options = {
     "dest_folder": os.getcwd(),
     "file_naming": "_edited",
@@ -281,8 +279,8 @@ def on_load_preset():
             data = json.load(f)
         for k, v in data.items():
             if k in slider_vars:
-                slider_vars[k][0].set(v)          # update Scale variable
-                slider_vars[k][1].set(f"{v:.2f}") # update Entry display
+                slider_vars[k][0].set(v)
+                slider_vars[k][1].set(f"{v:.2f}")
         update_preview()
         status_var.set(f"Preset loaded: {os.path.basename(path)}")
     except Exception as e:

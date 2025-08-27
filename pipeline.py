@@ -1,8 +1,9 @@
 """
 RAW-to-JPEG batch pipeline + live-preview helper.
 
-2025-07-01: `raw2bgr()` now validates the LibRaw output and raises a
-RuntimeError when no pixel data are returned.
+2025-08-27
+• raw2bgr() now decodes at 16-bit and returns float32 BGR in [0,1].
+  (Avoids highlight/posterization issues when pushing tone sliders.)
 """
 import os
 import cv2
@@ -37,13 +38,13 @@ def _map_color_space(name):
 # RAW → float32 BGR [0, 1]
 # ------------------------------------------------------------------
 def raw2bgr(raw, *, kelvin, tint, color_space="sRGB"):
-    """Decode with LibRaw and return a float32 BGR image."""
+    """Decode with LibRaw and return a float32 BGR image in [0,1]."""
     if kelvin == NEUTRAL_TEMP and tint == NEUTRAL_TINT:
-        rgb8 = raw.postprocess(
+        rgb16 = raw.postprocess(
             no_auto_bright=True,
             output_color=_map_color_space(color_space),
-            gamma=(2.222, 4.5),
-            output_bps=8,
+            gamma=(2.222, 4.5),      # display-referred; tone ops convert to linear as needed
+            output_bps=16,           # ↑ precision vs previous 8-bit
             use_camera_wb=True,
         )
     else:
@@ -55,20 +56,20 @@ def raw2bgr(raw, *, kelvin, tint, color_space="sRGB"):
             cam_wb[2]*b_s,
             cam_wb[3]*g_s,
         )
-        rgb8 = raw.postprocess(
+        rgb16 = raw.postprocess(
             no_auto_bright=True,
             output_color=_map_color_space(color_space),
             gamma=(2.222, 4.5),
-            output_bps=8,
+            output_bps=16,
             use_camera_wb=False,
             user_wb=user_wb,
         )
 
-    # --- new guard ---------------------------------------------------
-    if rgb8 is None or getattr(rgb8, "size", 0) == 0:
+    if rgb16 is None or getattr(rgb16, "size", 0) == 0:
         raise RuntimeError("LibRaw returned no pixel data")
 
-    return rgb8[..., ::-1].astype(np.float32) / 255.0  # BGR, [0,1]
+    # Convert to float32 BGR in [0,1]
+    return rgb16[..., ::-1].astype(np.float32) / 65535.0
 
 # ------------------------------------------------------------------
 # batch export
@@ -102,8 +103,8 @@ def process_images(file_list, params, options):
             blur = cv2.GaussianBlur(img, (0, 0), 1)
             img = np.clip(img + (img - blur)*s, 0, 1)
 
-        out = (img*255 + 0.5).astype(np.uint8)
+        out8 = (img * 255.0 + 0.5).astype(np.uint8)
         stem, _ = os.path.splitext(os.path.basename(path))
         name = f"{stem}{options['file_naming']}.{options['format'].lower()}"
-        cv2.imwrite(os.path.join(options["dest_folder"], name), out)
+        cv2.imwrite(os.path.join(options["dest_folder"], name), out8)
         print(f"[saved] {name}")
