@@ -1,7 +1,8 @@
+# ui.py – Tkinter front-end for RawImageBatchLab
 """
-ui.py – Tkinter front-end for RawImageBatchLab
-2025-08-27
-• No UI changes; compatible with 16-bit decode and new tone behavior.
+2025-08-28
+• Added DPI field in Save Options (default 300) so exports keep 300 DPI.
+• Compatible with auto-bright baseline and ICC/DPI writing in pipeline.py.
 """
 import os, json, tkinter as tk
 from tkinter import ttk, filedialog
@@ -43,6 +44,7 @@ options = {
     "color_space": "sRGB",     # sRGB / Adobe / ProPhoto
     "size": None,              # (w,h) or None
     "sharpening": "None",      # None / Low / Standard / High
+    "dpi": 300,                # <-- new: write DPI metadata on export
 }
 
 # ----------------------------------------------------------------------
@@ -236,6 +238,11 @@ def on_save_options():
                  values=["None", "Low", "Standard", "High"]
                  ).grid(row=5, column=1, columnspan=2, sticky="ew", padx=5, pady=5)
 
+    # DPI
+    ttk.Label(win, text="DPI").grid(row=6, column=0, sticky="w")
+    dpi_var = tk.StringVar(value=str(options.get("dpi", 300)))
+    ttk.Entry(win, textvariable=dpi_var, width=8, justify="center").grid(row=6, column=1, sticky="w", padx=5, pady=5)
+
     def save_and_close():
         options["dest_folder"] = dest_var.get()
         options["file_naming"] = name_var.get()
@@ -247,10 +254,14 @@ def on_save_options():
         except ValueError:
             options["size"] = None
         options["sharpening"] = sharp_var.get()
+        try:
+            options["dpi"] = max(1, int(float(dpi_var.get())))
+        except ValueError:
+            options["dpi"] = 300
         win.destroy()
 
-    ttk.Button(win, text="Save",   command=save_and_close).grid(row=6, column=1, pady=10)
-    ttk.Button(win, text="Cancel", command=win.destroy).grid(row=6, column=2, pady=10)
+    ttk.Button(win, text="Save",   command=save_and_close).grid(row=7, column=1, pady=10)
+    ttk.Button(win, text="Cancel", command=win.destroy).grid(row=7, column=2, pady=10)
 
 # ----------------------------------------------------------------------
 # Preset handling (adjustment parameters)
